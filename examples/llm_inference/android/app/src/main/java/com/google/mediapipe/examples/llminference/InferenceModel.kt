@@ -1,6 +1,7 @@
 package com.google.mediapipe.examples.llminference
 
 import android.content.Context
+import android.os.Environment
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import java.io.File
 import kotlinx.coroutines.channels.BufferOverflow
@@ -27,7 +28,7 @@ class InferenceModel private constructor(context: Context) {
 
         val options = LlmInference.LlmInferenceOptions.builder()
             .setModelPath(MODEL_PATH)
-            .setMaxTokens(1024)
+            .setMaxTokens(800)
             .setResultListener { partialResult, done ->
                 _partialResults.tryEmit(partialResult to done)
             }
@@ -41,8 +42,13 @@ class InferenceModel private constructor(context: Context) {
     }
 
     companion object {
-        private const val MODEL_PATH = "/data/local/tmp/llm/model.bin"
+
+        val downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val file = File(downloadsDirectory, "gemma-1.1-2b-it-cpu-int4.bin")
+//        private const val MODEL_PATH = "/data/local/tmp/llm/gemma-1.1-2b-it-cpu-int4.bin"
+        private var MODEL_PATH = file.absolutePath
         private var instance: InferenceModel? = null
+
 
         fun getInstance(context: Context): InferenceModel {
             return if (instance != null) {

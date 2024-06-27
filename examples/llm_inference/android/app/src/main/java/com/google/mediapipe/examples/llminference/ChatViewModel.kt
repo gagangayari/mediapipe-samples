@@ -13,7 +13,8 @@ import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.launch
 
 class ChatViewModel(
-    private val inferenceModel: InferenceModel
+    private val inferenceModel: InferenceModel,
+    private var toAppend: Boolean = true
 ) : ViewModel() {
 
     // `GemmaUiState()` is optimized for the Gemma model.
@@ -37,11 +38,20 @@ class ChatViewModel(
                 inferenceModel.generateResponseAsync(fullPrompt)
                 inferenceModel.partialResults
                     .collectIndexed { index, (partialResult, done) ->
+                        println("Partial result: $partialResult")
+
+//                        if(partialResult.contains("`")){
+//                            toAppend = false
+//                        }
+
                         currentMessageId?.let {
                             if (index == 0) {
                                 _uiState.value.appendFirstMessage(it, partialResult)
                             } else {
-                                _uiState.value.appendMessage(it, partialResult, done)
+//                                if(toAppend){
+                                    _uiState.value.appendMessage(it, partialResult, done)
+
+//                                }
                             }
                             if (done) {
                                 currentMessageId = null
@@ -55,6 +65,8 @@ class ChatViewModel(
                 setInputEnabled(true)
             }
         }
+
+//        toAppend = true
     }
 
     private fun setInputEnabled(isEnabled: Boolean) {
