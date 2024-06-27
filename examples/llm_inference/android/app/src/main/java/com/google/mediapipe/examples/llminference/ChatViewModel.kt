@@ -34,24 +34,25 @@ class ChatViewModel(
             var currentMessageId: String? = _uiState.value.createLoadingMessage()
             setInputEnabled(false)
             try {
+
                 val fullPrompt = _uiState.value.fullPrompt
-                inferenceModel.generateResponseAsync(fullPrompt)
+                inferenceModel.generateResponseAsync(userMessage)
                 inferenceModel.partialResults
                     .collectIndexed { index, (partialResult, done) ->
                         println("Partial result: $partialResult")
 
-//                        if(partialResult.contains("`")){
-//                            toAppend = false
-//                        }
+                        if(partialResult.contains("`")){
+                            toAppend = false
+                        }
 
                         currentMessageId?.let {
                             if (index == 0) {
                                 _uiState.value.appendFirstMessage(it, partialResult)
                             } else {
-//                                if(toAppend){
+                                if(toAppend){
                                     _uiState.value.appendMessage(it, partialResult, done)
 
-//                                }
+                                }
                             }
                             if (done) {
                                 currentMessageId = null
@@ -66,7 +67,7 @@ class ChatViewModel(
             }
         }
 
-//        toAppend = true
+        toAppend = true
     }
 
     private fun setInputEnabled(isEnabled: Boolean) {

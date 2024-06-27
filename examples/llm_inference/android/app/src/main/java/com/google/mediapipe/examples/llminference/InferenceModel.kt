@@ -38,7 +38,8 @@ class InferenceModel private constructor(context: Context) {
     }
 
     fun generateResponseAsync(prompt: String) {
-        llmInference.generateResponseAsync(prompt)
+        var prePrompt = Prompts.EXTRACTWFHEntityPrompt(prompt)
+        llmInference.generateResponseAsync(prePrompt)
     }
 
     companion object {
