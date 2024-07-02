@@ -1,6 +1,7 @@
 package com.google.mediapipe.examples.llminference
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,7 +15,9 @@ import kotlinx.coroutines.launch
 
 class ChatViewModel(
     private val inferenceModel: InferenceModel,
-    private var toAppend: Boolean = true
+    private var toAppend : Boolean = true,
+    private var tempPrompt : String = "",
+    private var isRAIvalid : Boolean = false
 ) : ViewModel() {
 
     // `GemmaUiState()` is optimized for the Gemma model.
@@ -34,33 +37,50 @@ class ChatViewModel(
             var currentMessageId: String? = _uiState.value.createLoadingMessage()
             setInputEnabled(false)
             try {
+                isRAIvalid = inferenceModel.isRAIValid(userMessage)
+                if(isRAIvalid){
+                    val fullPrompt = _uiState.value.fullPrompt
+                    tempPrompt = userMessage
+                }
 
-                val fullPrompt = _uiState.value.fullPrompt
-                inferenceModel.generateResponseAsync(userMessage)
-                inferenceModel.partialResults
-                    .collectIndexed { index, (partialResult, done) ->
-                        println("Partial result: $partialResult")
+                else{
+                    Log.i("ChatViewModel", "INVALID RAI: $userMessage")
+                    tempPrompt = "Respond to the user saying that the input needs to be more ethical, appropriate and non-malicious.\n" +
+                            "Response:"
+                }
 
-                        if(partialResult.contains("`")){
-                            toAppend = false
-                        }
 
-                        currentMessageId?.let {
-                            if (index == 0) {
-                                _uiState.value.appendFirstMessage(it, partialResult)
-                            } else {
-                                if(toAppend){
-                                    _uiState.value.appendMessage(it, partialResult, done)
+                inferenceModel.generateResponseAsync(tempPrompt, isRAIvalid)
+                    inferenceModel.partialResults
+                        .collectIndexed { index, (partialResult, done) ->
+                            println("Partial result: $partialResult")
 
+
+
+                            currentMessageId?.let {
+                                if (index == 0) {
+                                    _uiState.value.appendFirstMessage(it, partialResult)
+                                } else {
+                                    if(toAppend){
+                                        _uiState.value.appendMessage(it, partialResult, done)
+                                    }
                                 }
+                                if (done) {
+                                    currentMessageId = null
+                                    // Re-enable text input
+                                    setInputEnabled(true)
+                                }
+                                if(partialResult.contains("}")){
+                                    toAppend = false
+                                }
+
                             }
-                            if (done) {
-                                currentMessageId = null
-                                // Re-enable text input
-                                setInputEnabled(true)
-                            }
+
                         }
-                    }
+
+
+
+
             } catch (e: Exception) {
                 _uiState.value.addMessage(e.localizedMessage ?: "Unknown Error", MODEL_PREFIX)
                 setInputEnabled(true)
