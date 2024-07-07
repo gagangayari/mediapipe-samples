@@ -1,8 +1,11 @@
 package com.google.mediapipe.examples.llminference
 
+//import WorkFromHomeActivity
 import android.content.Context
+import android.content.Intent
 import android.os.Environment
 import android.util.Log
+import androidx.core.content.ContextCompat.startActivity
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import java.io.File
 import kotlinx.coroutines.channels.BufferOverflow
@@ -38,19 +41,44 @@ class InferenceModel private constructor(context: Context) {
         llmInference = LlmInference.createFromOptions(context, options)
     }
 
+    fun generateResponse(prompt: String): String{
+        var res = llmInference.generateResponse(prompt)
+        return res
+    }
     fun generateResponseAsync(prompt: String, isValidPrompt : Boolean) {
-        if(isValidPrompt){
-            var prePrompt = Prompts.EXTRACTWFHEntityPrompt(prompt)
-            llmInference.generateResponseAsync(prePrompt)
+        llmInference.generateResponseAsync(prompt)
+
+
+//        if(isValidPrompt){
+////            var prePrompt = Prompts.EXTRACTWFHEntityPrompt(prompt)
+//            var prePrompt = Prompts.EPICPROMPT(prompt)
+//            llmInference.generateResponseAsync(prePrompt)
+//        }
+//        else{
+//            llmInference.generateResponseAsync(prompt)
+//        }
+    }
+
+    // Define the function to navigate to the Work From Home Activity
+
+    fun isWFH(prompt: String) : Boolean{
+        var res = llmInference.generateResponse(Prompts.isWFH(prompt))
+        if(res.contains("yes", ignoreCase = true)){
+            Log.i("RAI", "*** WFH $res")
+            return true
         }
         else{
-            llmInference.generateResponseAsync(prompt)
+            Log.i("RAI", "*** NO WFH $res")
+            return false
         }
+
     }
 
     fun isRAIValid(prompt: String): Boolean{
-//        return true
-        return !isPromptInjection(prompt) //&& !isToxic(prompt)
+//        val intent = Intent(this.appContext,)
+//        startActivity(intent)
+        return true
+//        return !isPromptInjection(prompt) //&& !isToxic(prompt)
     }
 
     //This might provide an incorrect result
@@ -104,7 +132,7 @@ class InferenceModel private constructor(context: Context) {
     companion object {
 
         val downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-//        val file = File(downloadsDirectory, "gemma-1.1-2b-it-cpu-int4.bin")
+        val file = File(downloadsDirectory, "gemma-1.1-2b-it-cpu-int4.bin")
         private const val MODEL_PATH = "/data/local/tmp/llm/gemma-1.1-2b-it-cpu-int4.bin"
 //        private var MODEL_PATH = file.absolutePath
         private var instance: InferenceModel? = null

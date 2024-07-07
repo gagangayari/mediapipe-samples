@@ -17,9 +17,9 @@ class ChatViewModel(
     private val inferenceModel: InferenceModel,
     private var toAppend : Boolean = true,
     private var tempPrompt : String = "",
-    private var isRAIvalid : Boolean = false
 ) : ViewModel() {
 
+    var isWFH : Boolean = false
     // `GemmaUiState()` is optimized for the Gemma model.
     // Replace `GemmaUiState` with `ChatUiState()` if you're using a different model
     private val _uiState: MutableStateFlow<GemmaUiState> = MutableStateFlow(GemmaUiState())
@@ -31,52 +31,63 @@ class ChatViewModel(
     val isTextInputEnabled: StateFlow<Boolean> =
         _textInputEnabled.asStateFlow()
 
+
+    private val _showWFH: MutableStateFlow<Boolean> =
+        MutableStateFlow(false)
+
+    val showWFH: StateFlow<Boolean> =
+        _showWFH.asStateFlow()
+
     fun sendMessage(userMessage: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value.addMessage(userMessage, USER_PREFIX)
             var currentMessageId: String? = _uiState.value.createLoadingMessage()
             setInputEnabled(false)
             try {
-                isRAIvalid = inferenceModel.isRAIValid(userMessage)
-                if(isRAIvalid){
-                    val fullPrompt = _uiState.value.fullPrompt
-                    tempPrompt = userMessage
+                isWFH = inferenceModel.isWFH(userMessage)
+                if(isWFH){
+                    Log.i("ChatViewModel", "*** WFH: $userMessage")
+                    tempPrompt = Prompts.EXTRACTWFHEntityPrompt(userMessage)
+                    inferenceModel.generateResponse(tempPrompt)
+                    showWFH(isWFH)
+//                    inferenceModel.generateResponseAsync(tempPrompt, true)
                 }
 
                 else{
-                    Log.i("ChatViewModel", "INVALID RAI: $userMessage")
-                    tempPrompt = "Respond to the user saying that the input needs to be more ethical, appropriate and non-malicious.\n" +
-                            "Response:"
+                    Log.i("ChatViewModel", "***NOT WFH: $userMessage")
+                    inferenceModel.generateResponseAsync(userMessage, true)
+
                 }
 
 
-                inferenceModel.generateResponseAsync(tempPrompt, isRAIvalid)
-                    inferenceModel.partialResults
-                        .collectIndexed { index, (partialResult, done) ->
-                            println("Partial result: $partialResult")
+
+
+                inferenceModel.partialResults
+                    .collectIndexed { index, (partialResult, done) ->
+                        println("Partial result: $partialResult")
 
 
 
-                            currentMessageId?.let {
-                                if (index == 0) {
-                                    _uiState.value.appendFirstMessage(it, partialResult)
-                                } else {
-                                    if(toAppend){
-                                        _uiState.value.appendMessage(it, partialResult, done)
-                                    }
+                        currentMessageId?.let {
+                            if (index == 0) {
+                                _uiState.value.appendFirstMessage(it, partialResult)
+                            } else {
+                                if(toAppend){
+                                    _uiState.value.appendMessage(it, partialResult, done)
                                 }
-                                if (done) {
-                                    currentMessageId = null
-                                    // Re-enable text input
-                                    setInputEnabled(true)
-                                }
-                                if(partialResult.contains("}")){
-                                    toAppend = false
-                                }
-
+                            }
+                            if (done) {
+                                currentMessageId = null
+                                // Re-enable text input
+                                setInputEnabled(true)
+                            }
+                            if(partialResult.contains("}")){
+                                toAppend = false
                             }
 
                         }
+
+                    }
 
 
 
@@ -92,6 +103,11 @@ class ChatViewModel(
 
     private fun setInputEnabled(isEnabled: Boolean) {
         _textInputEnabled.value = isEnabled
+    }
+
+    private fun showWFH(isWFH: Boolean) {
+        //hardcoded
+        _showWFH.value = isWFH
     }
 
     companion object {

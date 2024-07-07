@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -37,20 +38,33 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 
 @Composable
 internal fun ChatRoute(
     chatViewModel: ChatViewModel = viewModel(
         factory = ChatViewModel.getFactory(LocalContext.current.applicationContext)
-    )
+    ),
+
+    navController: NavController
 ) {
+    val showWFH by chatViewModel.showWFH.collectAsStateWithLifecycle()
     val uiState by chatViewModel.uiState.collectAsStateWithLifecycle()
     val textInputEnabled by chatViewModel.isTextInputEnabled.collectAsStateWithLifecycle()
     ChatScreen(
         uiState,
-        textInputEnabled
+        textInputEnabled,
     ) { message ->
         chatViewModel.sendMessage(message)
+    }
+
+    LaunchedEffect(key1 = showWFH) {
+        if(showWFH){
+            navController.navigate(WFH_SCREEN){
+                popUpTo(CHAT_SCREEN){inclusive= true}
+                launchSingleTop = true
+            }
+        }
     }
 }
 

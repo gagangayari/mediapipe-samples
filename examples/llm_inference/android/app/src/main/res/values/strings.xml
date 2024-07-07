@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">InfyMe WFH</string>
+    <string name="app_name">Personal Assistant</string>
     <string name="loading_model">Loading model</string>
     <string name="chat_label">Message</string>
     <string name="action_send">Send</string>

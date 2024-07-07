@@ -1,5 +1,6 @@
 package com.google.mediapipe.examples.llminference
 
+import WFHInterface
 import androidx.compose.runtime.toMutableStateList
 
 const val USER_PREFIX = "user"
@@ -75,6 +76,9 @@ class ChatUiState(
 class GemmaUiState(
     messages: List<ChatMessage> = emptyList()
 ) : UiState {
+
+    private var wfhDetails: WFHInterface? = null
+
     private val START_TURN = "<start_of_turn>"
     private val END_TURN = "<end_of_turn>"
 
