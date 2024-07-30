@@ -1,8 +1,6 @@
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
+
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -14,22 +12,18 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.width
-import androidx.compose.ui.unit.height
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.google.mediapipe.examples.llminference.CHAT_SCREEN
-import com.google.mediapipe.examples.llminference.LoadingIndicator
+import com.google.mediapipe.examples.llminference.ChatViewModel
 import com.google.mediapipe.examples.llminference.WFH_SCREEN
+import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 
 //class WorkFromHomeActivity : ComponentActivity() {
@@ -53,16 +47,42 @@ interface WFHInterface {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkFromHomeScreen(navController: NavController) {
+fun WorkFromHomeScreen(
+    navController: NavController,
+    chatViewModel: ChatViewModel ) {
+
+    val wfhDetails by chatViewModel.showWFHDetails.collectAsStateWithLifecycle()
+
     var fromDate by remember { mutableStateOf(TextFieldValue("05-Jul-2024")) }
     var toDate by remember { mutableStateOf(TextFieldValue("05-Jul-2024")) }
     var fromTime by remember { mutableStateOf(TextFieldValue("08:00")) }
     var toTime by remember { mutableStateOf(TextFieldValue("17:15")) }
+    var approver by remember { mutableStateOf(TextFieldValue("Kamalkumar_R@infosys.com")) }
     var assetUsed by remember { mutableStateOf(TextFieldValue("Infosys Laptop/Desktop")) }
     var connectivity by remember { mutableStateOf(TextFieldValue("Infosys network")) }
     var isAbleToWork by remember { mutableStateOf(true) }
     var isResidingInLocation by remember { mutableStateOf(true) }
     var isPolicyConfirmed by remember { mutableStateOf(false) }
+
+
+    val wfhJson = JSONObject(wfhDetails)
+//    Log.i("*** Chatview data", wfhJson.toString())
+
+
+        fromDate = TextFieldValue(wfhJson.getString("fromDate"))
+        toDate = TextFieldValue(wfhJson.getString("toDate"))
+        fromTime = TextFieldValue(wfhJson.getString("fromTime"))
+        toTime = TextFieldValue(wfhJson.getString("toTime"))
+        assetUsed = TextFieldValue(wfhJson.getString("Asset"))
+        approver = TextFieldValue(wfhJson.getString("Approver")+"@infosys.com")
+        connectivity = TextFieldValue(wfhJson.getString("Network"))
+
+
+
+
+
+//    val wfhInstance: WFHData = gson.fromJson(jsonString, WFHData::class.java)
+
 
     Scaffold(
         topBar = {
@@ -70,6 +90,11 @@ fun WorkFromHomeScreen(navController: NavController) {
                 title = { Text("Apply Work From Home") },
 //                backgroundColor = Color(0xFF6200EE),
 //                contentColor = Color.White
+                colors = TopAppBarDefaults.topAppBarColors(
+//                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = Color(0xFF6200EE),
+                    titleContentColor = Color.White,
+                ),
             )
         },
         content = { paddingValues ->
@@ -83,22 +108,10 @@ fun WorkFromHomeScreen(navController: NavController) {
             ) {
 
 
-                Button(
-                    onClick = {
-                        navController.navigate(CHAT_SCREEN) {
 
-                            popUpTo(WFH_SCREEN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                ) {
-                    Text("Submit")
-                }
                 Text(
                     text = "Apply Work From Home",
+
                     fontSize = 20.sp,
                     color = Color.Gray,
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -108,22 +121,26 @@ fun WorkFromHomeScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, Color.LightGray)
-                        .padding(8.dp),
+                        .padding(5.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CustomTextField(
-                        value = fromDate,
-                        onValueChange = { fromDate = it },
-                        label = "From Date",
-                        modifier = Modifier.weight(1f)
-                    )
-                    CustomTextField(
-                        value = toDate,
-                        onValueChange = { toDate = it },
-                        label = "To Date",
-                        modifier = Modifier.weight(1f)
-                    )
+//                    CustomTextField(
+//                        value = fromDate,
+//                        onValueChange = { fromDate = it },
+//                        label = "From Date",
+//                        modifier = Modifier.weight(1f)
+//                    )
+                    
+                    DateFieldExample(date = fromDate, text = "From Date")
+                    DateFieldExample(date = toDate, text = "To Date")
+
+//                    CustomTextField(
+//                        value = toDate,
+//                        onValueChange = { toDate = it },
+//                        label = "To Date",
+//                        modifier = Modifier.weight(1f)
+//                    )
                 }
 
                 Row(
@@ -235,7 +252,7 @@ fun WorkFromHomeScreen(navController: NavController) {
                 }
 
                 CustomTextField(
-                    value = TextFieldValue("Kamalkumar_R@infosys.com"),
+                    value = approver,
                     onValueChange = { /* Handle change */ },
                     label = "To be approved by",
                     modifier = Modifier.fillMaxWidth()
@@ -255,6 +272,23 @@ fun WorkFromHomeScreen(navController: NavController) {
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
+                }
+
+                Button(
+                    onClick = {
+                        //Turn off showWFH
+                        chatViewModel.setShowWFH(false)
+                        chatViewModel.uiState.value.appendMessage("000","Work from home submitted", true)
+                        navController.navigate(CHAT_SCREEN) {
+                            popUpTo(WFH_SCREEN) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Text("Submit")
                 }
 
 
@@ -288,8 +322,45 @@ fun CustomTextField(
     }
 }
 
+
+
+@Composable
+fun DateFieldExample(date : TextFieldValue, text : String) {
+    var dateText by remember { mutableStateOf((date)) }
+    val context = LocalContext.current
+
+    // Function to show DatePickerDialog
+    fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+        val datePickerDialog = android.app.DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                val selectedDate = Calendar.getInstance()
+                selectedDate.set(year, month, dayOfMonth)
+                val dateFormatter = SimpleDateFormat("dd/mmm/yyyy", Locale.getDefault())
+                dateText = TextFieldValue(dateFormatter.format(selectedDate.time))
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePickerDialog.show()
+    }
+
+        TextField(
+            value = dateText,
+            onValueChange = { dateText = it },
+            readOnly = true,
+            label = { Text(text) },
+            modifier = Modifier.width(180.dp)
+                .clickable { showDatePickerDialog() } ,
+
+        )
+}
+
 //@Preview(showBackground = true)
 //@Composable
 //fun WorkFromHomeScreenPreview() {
-//    WorkFromHomeScreen()
+//    WorkFromHomeScreen(NavController(LocalContext.current), ChatViewModel(InferenceModel.getInstance(
+//        LocalContext.current)))
 //}

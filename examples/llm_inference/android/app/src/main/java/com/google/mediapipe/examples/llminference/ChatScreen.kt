@@ -32,20 +32,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
 @Composable
 internal fun ChatRoute(
-    chatViewModel: ChatViewModel = viewModel(
-        factory = ChatViewModel.getFactory(LocalContext.current.applicationContext)
-    ),
 
+    chatViewModel: ChatViewModel,
     navController: NavController
 ) {
     val showWFH by chatViewModel.showWFH.collectAsStateWithLifecycle()

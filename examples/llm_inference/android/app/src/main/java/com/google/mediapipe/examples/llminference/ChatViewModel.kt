@@ -1,7 +1,6 @@
 package com.google.mediapipe.examples.llminference
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,10 +15,10 @@ import kotlinx.coroutines.launch
 class ChatViewModel(
     private val inferenceModel: InferenceModel,
     private var toAppend : Boolean = true,
-    private var tempPrompt : String = "",
 ) : ViewModel() {
 
     var isWFH : Boolean = false
+    var wfhDetails : String = ""
     // `GemmaUiState()` is optimized for the Gemma model.
     // Replace `GemmaUiState` with `ChatUiState()` if you're using a different model
     private val _uiState: MutableStateFlow<GemmaUiState> = MutableStateFlow(GemmaUiState())
@@ -38,52 +37,47 @@ class ChatViewModel(
     val showWFH: StateFlow<Boolean> =
         _showWFH.asStateFlow()
 
+    private val _showWFHDetails: MutableStateFlow<String> =
+        MutableStateFlow("")
+
+    val showWFHDetails: StateFlow<String> =
+        _showWFHDetails.asStateFlow()
+
     fun sendMessage(userMessage: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value.addMessage(userMessage, USER_PREFIX)
             var currentMessageId: String? = _uiState.value.createLoadingMessage()
-            setInputEnabled(false)
+
             try {
                 isWFH = inferenceModel.isWFH(userMessage)
                 if(isWFH){
-                    Log.i("ChatViewModel", "*** WFH: $userMessage")
-                    tempPrompt = Prompts.EXTRACTWFHEntityPrompt(userMessage)
-                    inferenceModel.generateResponse(tempPrompt)
-                    showWFH(isWFH)
-//                    inferenceModel.generateResponseAsync(tempPrompt, true)
+//                    Log.i("ChatViewModel", "*** WFH: $userMessage")
+                    wfhDetails = inferenceModel.getWFHEntities(prompt = userMessage)
+                    setWFHDetails(wfhDetails)
+                    setShowWFH(isWFH)
                 }
 
                 else{
-                    Log.i("ChatViewModel", "***NOT WFH: $userMessage")
-                    inferenceModel.generateResponseAsync(userMessage, true)
-
-                }
-
+                    setInputEnabled(false)
+//                    Log.i("ChatViewModel", "***NOT WFH: $userMessage")
+                    inferenceModel.generateResponseAsync(userMessage)
 
 
 
                 inferenceModel.partialResults
                     .collectIndexed { index, (partialResult, done) ->
-                        println("Partial result: $partialResult")
-
-
-
                         currentMessageId?.let {
                             if (index == 0) {
                                 _uiState.value.appendFirstMessage(it, partialResult)
                             } else {
-                                if(toAppend){
-                                    _uiState.value.appendMessage(it, partialResult, done)
-                                }
+                                _uiState.value.appendMessage(it, partialResult, done)
                             }
                             if (done) {
                                 currentMessageId = null
                                 // Re-enable text input
                                 setInputEnabled(true)
                             }
-                            if(partialResult.contains("}")){
-                                toAppend = false
-                            }
+
 
                         }
 
@@ -105,9 +99,13 @@ class ChatViewModel(
         _textInputEnabled.value = isEnabled
     }
 
-    private fun showWFH(isWFH: Boolean) {
+     fun setShowWFH(isWFH: Boolean) {
         //hardcoded
         _showWFH.value = isWFH
+    }
+
+    private fun setWFHDetails(details: String) {
+        _showWFHDetails.value = details
     }
 
     companion object {

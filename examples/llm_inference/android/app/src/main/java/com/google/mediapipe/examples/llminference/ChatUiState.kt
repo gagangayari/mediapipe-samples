@@ -1,6 +1,5 @@
 package com.google.mediapipe.examples.llminference
 
-import WFHInterface
 import androidx.compose.runtime.toMutableStateList
 
 const val USER_PREFIX = "user"
@@ -48,9 +47,9 @@ class ChatUiState(
         return chatMessage.id
     }
     
-    fun appendFirstMessage(id: String, text: String) {
-        appendMessage(id, text, false) 
-    }
+//    fun appendFirstMessage(id: String, text: String) {
+//        appendMessage(id, text, false)
+//    }
     
     override fun appendMessage(id: String, text: String, done: Boolean) {
         val index = _messages.indexOfFirst { it.id == id }
@@ -77,7 +76,6 @@ class GemmaUiState(
     messages: List<ChatMessage> = emptyList()
 ) : UiState {
 
-    private var wfhDetails: WFHInterface? = null
 
     private val START_TURN = "<start_of_turn>"
     private val END_TURN = "<end_of_turn>"
@@ -119,6 +117,15 @@ class GemmaUiState(
             }
             _messages[index] = _messages[index].copy(message = newText, isLoading = false)
         }
+
+        if(id == "000"){
+            var lastIndex = _messages.lastIndex
+            _messages[lastIndex] = ChatMessage(
+                message = text,
+                author = MODEL_PREFIX
+            )
+        }
+
     }
 
     override fun addMessage(text: String, author: String): String {

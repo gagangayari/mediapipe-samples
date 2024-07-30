@@ -13,14 +13,10 @@ import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -29,13 +25,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -48,7 +43,7 @@ const val WFH_SCREEN = "wfh_screen"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+//        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         if (!hasPermissions(this)) {
             Log.i("Main", "ABC No permission. Requesting permission")
 //            requestStoragePermission()
@@ -74,13 +69,18 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding),
-                        color = MaterialTheme.colorScheme.background,
+                        color = MaterialTheme.colorScheme.background ,
                     ) {
                         val navController = rememberNavController()
+                        var chatViewModel : ChatViewModel = viewModel(
+                            factory = ChatViewModel.getFactory(LocalContext.current.applicationContext)
+                        )
+//                        val chatViewModel : ChatViewModel = ChatViewModel(ChatViewModel.getFactory())
 
                         NavHost(
                             navController = navController,
-                            startDestination = START_SCREEN
+                            startDestination = START_SCREEN,
+
                         ) {
                             composable(START_SCREEN) {
                                 LoadingRoute(
@@ -94,12 +94,11 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable(CHAT_SCREEN) {
-                                ChatRoute(navController = navController)
+                                ChatRoute(navController = navController, chatViewModel = chatViewModel)
                             }
 
-                            composable(WFH_SCREEN){
-                                WorkFromHomeScreen(navController)
-
+                            composable(WFH_SCREEN) {
+                                WorkFromHomeScreen(navController = navController, chatViewModel = chatViewModel)
                             }
 
 
@@ -125,17 +124,18 @@ class MainActivity : ComponentActivity() {
                     titleContentColor = MaterialTheme.colorScheme.primary,
                 ),
             )
-            Box(
-                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
-            ) {
-                Text(
-                    text = stringResource(R.string.disclaimer),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(8.dp)
-                )
-            }
+//            Box(
+//                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
+//            ) {
+//                Text(
+//                    text = stringResource(R.string.disclaimer),
+//                    textAlign = TextAlign.Center,
+//                    style = MaterialTheme.typography.bodyMedium,
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(8.dp)
+//                )
+//            }
         }
     }
 
@@ -172,7 +172,5 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val REQUEST_CODE_READ_STORAGE = 1001
         const val REQUEST_CODE_MANAGE_STORAGE = 1002
-        const val REQUEST_CODE_OPEN_DOCUMENT_TREE = 1003
-        const val REQUEST_CODE_PICK_FILE = 1002
     }
 }
